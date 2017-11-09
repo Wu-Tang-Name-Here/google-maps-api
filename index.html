@@ -1,0 +1,160 @@
+<html>
+ <head>
+ <!-- styles put here, but you can include a CSS file and reference it instead! -->
+   <style type="text/css">
+     html, body { height: 100%; margin: 0; padding: 0; }
+     #map { 
+      height: 100%; 
+    }
+
+    .options-box {
+      background: green;
+        border: 1px solid #999;
+        border-radius: 3px;
+        height: 100%;
+        line-height: 35px;
+        padding: 10px 10px 30px 10px;
+        text-align: left;
+        width: 25%;
+        float: left;
+    }
+   </style>
+
+ </head>
+ 
+ <body>
+  <div class="container">
+    <div class="options-box">
+      <img style="max-width: 100%;" src="img/logos.png">
+      <h1 style="color: white; text-align: center;">Taylor Sites</h1>
+      <div>
+        <input id="show-listings" type="button" value="Show Listings">
+        <input id="hide-listings" type="button" value="Hide Listings">
+      </div>
+    </div>
+   <!--place where maps!-->
+   <div id="map"></div>
+  
+   <script>
+     //map variable
+     var map;
+
+     //creates blank array for all listings
+     var markers = [];
+
+     //function to initialize the map
+     function initMap() {
+       
+       map = new google.maps.Map(document.getElementById('map'), {
+        center: {lat: 37.565481, lng: -97.998047}, 
+        zoom: 4
+       });
+       /*var tribeca = {lat: 40.719526, lng: -74.0089934};
+       var marker =new google.maps.Marker({
+        position: tribeca,
+        map: map,
+        title: 'First Marker!'
+       });
+       var infowindow = new google.maps.InfoWindow({
+        content: 'Do you ever feel like a InfoWindow, floating through the wind?' + ' Ready to start again?'
+       });
+       marker.addListener('click', function() {
+        infowindow.open(map, marker);
+       });*/
+
+      var locations = [
+        {title: 'FISM', address: '150 Main St, Salinas CA', location: {lat: 36.676161, lng: -121.655814}},
+        {title: 'CAYG', address: '4375 East Gila Ridge Road, Yuma AZ', location: {lat: 32.679836, lng: -114.559475}},
+        {title: 'CASA', address: '1207 Abbott, Salinas CA', location: {lat: 36.656009, lng: -121.628095}},
+        {title: 'FLO2', address: '7520 Chancellor Drive, Orlando FL', location: {lat: 28.455706, lng: -81.412847}},
+        {title: 'MDAJ', address: '9055 Junction Drive, Annapolis Junction MD', location: {lat: 39.124065, lng: -76.801547}},
+        {title: 'MXDM', address: 'Carr. Doctor Mora a San Miguel, Doctor Mora Gto. MX', location: {lat: 21.127814, lng: -100.361137}},
+        {title: 'TNSS', address: '502 Sam Ridley Parkway East, Smyrna TN', location: {lat: 35.997410, lng: -86.530259}},
+        {title: 'COCN', address: '890 North Newport Rd, Colorado Springs CO', location: {lat: 38.819337, lng: -104.723809}}
+      ];
+
+      var largeInfoWindows = new google.maps.InfoWindow();
+      var bounds = new google.maps.LatLngBounds();
+
+      for (var i = 0; i < locations.length; i++) {
+        //get position from location array
+        var position = locations[i].location;
+        var address = locations[i].address;
+        var title = locations[i].title;
+        //create marker per locations and put into markers array
+        var marker = new google.maps.Marker({
+          //map: map,
+          position: position,
+          title: title,
+          address: address,
+          animation: google.maps.Animation.DROP,
+          id: i
+        });
+        //push marker to our array of markers
+        markers.push(marker);
+        //etends boundries of the map for each marker
+        bounds.extend(marker.position);
+        //create an onclick event to open an infowindow at each arker
+        marker.addListener('mouseover', function() {
+          populateInfoWindow(this, largeInfoWindows);
+        });
+      }
+        //map.fitBounds(bounds);
+        document.getElementById('show-listings').addEventListener('click', showListings);
+        document.getElementById('hide-listings').addEventListener('click', hideListings);
+      }
+      function populateInfoWindow(marker, infowindow) {
+        if (infowindow.marker != marker) {
+          infowindow.setContent('');
+          infowindow.marker = marker;
+          infowindow.addListener('closeclick', function(){
+            infowindow.marker = null;
+          });
+
+          var streetViewService = new google.maps.StreetViewService();
+          var radius = 50;
+
+          function getStreetView(data, status) {
+            if(status == google.maps.StreetViewStatus.OK) {
+              var nearStreetViewLocation = data.location.latLng;
+              var heading = google.maps.geometry.spherical.computeHeading(nearStreetViewLocation, marker.position);
+                infowindow.setContent('<div' + marker.title + '</div><div id="pano"></div>');
+                  var panormaOptions = {
+                    position: nearStreetViewLocation,
+                    pov: {
+                      heading: heading,
+                      pitch: 30
+                    }
+                  };
+                  var panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), panormaOptions);
+            } else {
+              infowindow.setContent('<div>' + marker.title + '</div>' + '<div>No Street View Found</div>');
+            }
+          }
+          streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+          infowindow.open(map, marker);
+        }
+      }
+        function showListings() {
+          var bounds = new google.maps.LatLngBounds();
+          for (var i = 0; i <markers.length; i++) {
+            markers[i].setMap(map);
+            bounds.extend(markers[i].position)
+          }
+          map.fitBounds(bounds);
+        }
+
+        function hideListings() {
+          for (var i = 0; i < markers.length; i++) {
+            markers[i].setMap(null);
+          }
+        }
+   </script>
+   <!--Loads the JS API ASYNCHRONOUSLY below.-->
+   <script async defer
+        src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyDwWUPQ1eQ0aAZiex35Eh3Zm-k-T1qZznk&v=3&callback=initMap">
+    </script>
+ </body>
+</html>
+
+<!--geocoding requests look like this https://maps.googleapis.com/maps/api/geocode/json?address=150+Main+Street,+Salinas,+CA&key=AIzaSyDwWUPQ1eQ0aAZiex35Eh3Zm-k-T1qZznk-->
